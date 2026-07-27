@@ -1,0 +1,17 @@
+{
+  "mcVersion": "1.21.1",
+  "neoforgeVersion": "21.1.235",
+  "server": {
+    "host": "65.108.18.26",
+    "port": 25790
+  },
+  "update": {
+    "githubOwner": "cxzknovme",
+    "githubRepo": "Code5",
+    "manifestAsset": "manifest.json"
+  },
+  "memory": {
+    "max": "3G",
+    "min": "1G"
+  }
+}

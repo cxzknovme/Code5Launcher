@@ -1,0 +1,60 @@
+{
+  "name": "code5-launcher",
+  "version": "1.0.0",
+  "description": "Code5 custom Minecraft launcher — offline nick, auto-update mods, auto-join server",
+  "main": "main.js",
+  "author": "knovme",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/cxzknovme/Code5Launcher",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cxzknovme/Code5Launcher.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac --universal"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "minecraft-launcher-core": "^3.18.2"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "xyz.joinserver.code5.launcher",
+    "productName": "Code5 Launcher",
+    "publish": {
+      "provider": "github",
+      "owner": "cxzknovme",
+      "repo": "Code5Launcher",
+      "releaseType": "release"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!**/*.md"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false,
+      "artifactName": "Code5Launcher-Windows.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.games",
+      "identity": null,
+      "artifactName": "Code5Launcher-macOS.${ext}"
+    }
+  }
+}

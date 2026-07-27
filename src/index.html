@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
+    <title>Code5 Launcher</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>CODE5</h1>
+        <div class="sub" id="server-line">launcher</div>
+      </header>
+
+      <main>
+        <label class="field">
+          <span>Ник</span>
+          <input id="nick" type="text" maxlength="16" placeholder="knovme" autocomplete="off" spellcheck="false" />
+        </label>
+
+        <button id="play" class="play">ИГРАТЬ</button>
+
+        <div class="bar"><div class="bar-fill" id="bar"></div></div>
+        <pre id="log" class="log" aria-live="polite"></pre>
+      </main>
+
+      <footer>
+        <span id="ver">Minecraft — · NeoForge —</span>
+      </footer>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>
