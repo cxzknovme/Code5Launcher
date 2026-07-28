@@ -4,7 +4,7 @@
 
 # Code5 Launcher
 
-Лаунчер Minecraft для сервера Code5: `65.108.18.26:25790`.
+Лаунчер Minecraft для сервера Code5: 
 
 ## Скачать
 
