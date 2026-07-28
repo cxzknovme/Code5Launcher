@@ -2,33 +2,146 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Code5 Launcher</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app">
-      <header>
-        <h1>CODE5</h1>
-        <div class="sub" id="server-line">launcher</div>
+    <div class="app-shell">
+      <header class="titlebar">
+        <div class="titlebar-brand">
+          <img src="../assets/code5-icon.png" alt="" />
+          <span>Code5 Launcher</span>
+        </div>
+        <div class="window-actions">
+          <button id="minimize" class="icon-button" type="button" title="Свернуть" aria-label="Свернуть">
+            <i data-lucide="minus"></i>
+          </button>
+          <button id="close" class="icon-button close-button" type="button" title="Закрыть" aria-label="Закрыть">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
       </header>
 
-      <main>
-        <label class="field">
-          <span>Ник</span>
-          <input id="nick" type="text" maxlength="16" placeholder="knovme" autocomplete="off" spellcheck="false" />
-        </label>
+      <div class="launcher-body">
+        <aside class="rail" aria-label="Быстрые действия">
+          <div class="rail-mark">
+            <img src="../assets/code5-icon.png" alt="Code5" />
+          </div>
+          <button class="rail-button active" type="button" title="Главная" aria-label="Главная">
+            <i data-lucide="house"></i>
+          </button>
+          <button
+            id="copy-server"
+            class="rail-button"
+            type="button"
+            title="Копировать адрес сервера"
+            aria-label="Копировать адрес сервера"
+          >
+            <i data-lucide="server"></i>
+          </button>
+          <button
+            id="open-folder"
+            class="rail-button"
+            type="button"
+            title="Открыть папку игры"
+            aria-label="Открыть папку игры"
+          >
+            <i data-lucide="folder-open"></i>
+          </button>
+          <div class="rail-spacer"></div>
+          <span class="rail-status" title="Канал обновлений: Release"></span>
+        </aside>
 
-        <button id="play" class="play">ИГРАТЬ</button>
+        <main class="content">
+          <section class="account-row">
+            <label class="account-field" for="nick">
+              <i data-lucide="user-round"></i>
+              <span class="field-copy">
+                <small>Игрок</small>
+                <input
+                  id="nick"
+                  type="text"
+                  maxlength="16"
+                  placeholder="Введите ник"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </span>
+              <i class="verified" data-lucide="badge-check"></i>
+            </label>
+            <div class="release-badge">
+              <i data-lucide="sparkles"></i>
+              <span>Release</span>
+            </div>
+          </section>
 
-        <div class="bar"><div class="bar-fill" id="bar"></div></div>
-        <pre id="log" class="log" aria-live="polite"></pre>
-      </main>
+          <section class="brand-stage">
+            <div class="brand-lockup">
+              <img class="hero-logo" src="../assets/code5-icon.png" alt="Code5" />
+              <div>
+                <p class="eyebrow">Minecraft Launcher</p>
+                <h1>Code5</h1>
+                <p class="server-address" id="server-address">65.108.18.26:25790</p>
+              </div>
+            </div>
 
-      <footer>
-        <span id="ver">Minecraft — · NeoForge —</span>
-      </footer>
+            <div class="server-panel">
+              <div class="panel-heading">
+                <span class="blue-marker"></span>
+                <span>Code5 World</span>
+              </div>
+              <dl>
+                <div>
+                  <dt>Minecraft</dt>
+                  <dd id="minecraft-version">1.21.1</dd>
+                </div>
+                <div>
+                  <dt>NeoForge</dt>
+                  <dd id="neoforge-version">21.1.235</dd>
+                </div>
+                <div>
+                  <dt>Лаунчер</dt>
+                  <dd id="launcher-version">v1.0.2</dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+
+          <footer class="launch-dock">
+            <button id="play" class="play-button" type="button">
+              <i data-lucide="play"></i>
+              <span>Играть</span>
+            </button>
+
+            <div class="launch-progress">
+              <div class="progress-copy">
+                <strong id="percent">0%</strong>
+                <span id="status" aria-live="polite">Проверяем обновления</span>
+                <span class="ready-label">Release</span>
+              </div>
+              <div
+                class="progress-track"
+                role="progressbar"
+                aria-label="Подготовка игры"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <div id="bar" class="progress-fill"></div>
+              </div>
+              <p id="error" class="error-message" aria-live="assertive"></p>
+            </div>
+          </footer>
+        </main>
+      </div>
     </div>
+
+    <script src="../node_modules/lucide/dist/umd/lucide.min.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

@@ -3,5 +3,7 @@ dist/
 manifest.json
 *.log
 .npm-cache/
+.electron-cache/
+.tmp/
 .DS_Store
 .idea/

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, clipboard, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -9,53 +9,107 @@ const { launchGame } = require('./lib/launch');
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
 let win = null;
+let updateCheckStarted = false;
+let launcherUpdating = false;
+let playInProgress = false;
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.allowPrerelease = false;
 
-/** Каталог данных лаунчера (инстанс Minecraft) — кроссплатформенно (Win: %APPDATA%, Mac: ~/Library/Application Support). */
 function dataDir() {
   return path.join(app.getPath('appData'), 'Code5Launcher');
 }
 
+function send(channel, payload) {
+  if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
+}
+
+function sendStatus(message, state = 'idle', locked = false) {
+  send('status', { message, state, locked });
+}
+
+function sendProgress(value) {
+  send('progress', Math.max(0, Math.min(100, Number(value) || 0)));
+}
+
 function createWindow() {
   win = new BrowserWindow({
-    width: 900,
-    height: 560,
+    width: 1100,
+    height: 680,
+    minWidth: 1100,
+    minHeight: 680,
+    maxWidth: 1100,
+    maxHeight: 680,
     resizable: false,
+    fullscreenable: false,
+    frame: false,
+    show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#140c06',
+    backgroundColor: '#090a0d',
+    icon: path.join(__dirname, 'assets', 'code5-icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
+  win.once('ready-to-show', () => win.show());
   win.webContents.once('did-finish-load', checkLauncherUpdates);
 }
 
 function checkLauncherUpdates() {
-  if (!app.isPackaged) return;
+  if (!app.isPackaged || updateCheckStarted) {
+    if (!app.isPackaged) {
+      sendProgress(100);
+      sendStatus('Готов к игре');
+    }
+    return;
+  }
 
-  autoUpdater.on('checking-for-update', () => send('log', 'Проверка обновлений лаунчера...'));
+  updateCheckStarted = true;
+  sendStatus('Проверяем обновление лаунчера', 'checking', true);
+  sendProgress(8);
+
   autoUpdater.on('update-available', (info) => {
-    send('log', `Доступна версия лаунчера ${info.version}. Загрузка...`);
-  });
-  autoUpdater.on('download-progress', (progress) => {
-    send('log', `Обновление лаунчера: ${Math.round(progress.percent)}%`);
-  });
-  autoUpdater.on('update-downloaded', (info) => {
-    send('log', `Версия ${info.version} загружена и установится после закрытия лаунчера.`);
-  });
-  autoUpdater.on('error', (error) => {
-    send('log', `Не удалось проверить обновление лаунчера: ${error.message}`);
+    launcherUpdating = true;
+    sendStatus(`Загружаем лаунчер ${info.version}`, 'updating', true);
+    sendProgress(0);
   });
 
-  autoUpdater.checkForUpdatesAndNotify().catch((error) => {
-    send('log', `Не удалось проверить обновление лаунчера: ${error.message}`);
+  autoUpdater.on('download-progress', (progress) => {
+    sendStatus(`Загружаем лаунчер ${Math.round(progress.percent)}%`, 'updating', true);
+    sendProgress(progress.percent);
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    launcherUpdating = false;
+    sendProgress(100);
+    sendStatus('Готов к игре');
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    launcherUpdating = true;
+    sendProgress(100);
+    sendStatus(`Устанавливаем версию ${info.version}`, 'restarting', true);
+    setTimeout(() => autoUpdater.quitAndInstall(false, true), 1200);
+  });
+
+  autoUpdater.on('error', (error) => {
+    launcherUpdating = false;
+    sendProgress(100);
+    sendStatus('Готов к игре');
+    send('launcher-error', `Обновление лаунчера недоступно: ${error.message}`);
+  });
+
+  autoUpdater.checkForUpdates().catch((error) => {
+    launcherUpdating = false;
+    sendProgress(100);
+    sendStatus('Готов к игре');
+    send('launcher-error', `Обновление лаунчера недоступно: ${error.message}`);
   });
 }
 
@@ -70,33 +124,68 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-function send(channel, payload) {
-  if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
-}
 const io = {
-  log: (m) => send('log', String(m)),
-  progress: (p) => send('progress', p)
+  log: (message) => sendStatus(String(message), 'working', true),
+  progress: sendProgress
 };
 
-// Отдаём конфиг рендереру (адрес сервера, версии — для отображения).
-ipcMain.handle('get-config', () => config);
+ipcMain.handle('get-config', () => ({
+  ...config,
+  appVersion: app.getVersion()
+}));
 
-// Кнопка «Играть»: сначала синк модов, затем запуск Minecraft с автозаходом.
-ipcMain.handle('play', async (_e, nick) => {
+ipcMain.handle('play', async (_event, nick) => {
+  if (launcherUpdating) {
+    return { ok: false, error: 'Дождитесь установки обновления лаунчера.' };
+  }
+  if (playInProgress) {
+    return { ok: false, error: 'Игра уже запускается.' };
+  }
+
   const cleanNick = String(nick || '').trim();
   if (!/^[A-Za-z0-9_]{3,16}$/.test(cleanNick)) {
-    return { ok: false, error: 'Ник: 3–16 символов, латиница/цифры/подчёркивание.' };
+    return { ok: false, error: 'Ник: 3–16 символов, латиница, цифры или подчёркивание.' };
   }
+
   const dir = dataDir();
   fs.mkdirSync(dir, { recursive: true });
+  playInProgress = true;
+  sendProgress(0);
+
   try {
-    io.log('Проверка обновлений…');
+    sendStatus('Проверяем игровые файлы', 'working', true);
     await syncMods(config, dir, io);
-    io.log('Запуск Minecraft…');
+    sendStatus('Запускаем Minecraft', 'launching', true);
     await launchGame(config, dir, cleanNick, io);
+    sendProgress(100);
+    sendStatus('Готов к игре');
     return { ok: true };
-  } catch (err) {
-    io.log('Ошибка: ' + (err && err.message ? err.message : String(err)));
-    return { ok: false, error: String(err && err.message ? err.message : err) };
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    sendProgress(0);
+    sendStatus('Не удалось запустить игру', 'error');
+    send('launcher-error', message);
+    return { ok: false, error: message };
+  } finally {
+    playInProgress = false;
   }
+});
+
+ipcMain.handle('window:minimize', (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.minimize();
+});
+
+ipcMain.handle('window:close', (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.close();
+});
+
+ipcMain.handle('open-game-dir', async () => {
+  const dir = dataDir();
+  fs.mkdirSync(dir, { recursive: true });
+  return shell.openPath(dir);
+});
+
+ipcMain.handle('copy-server', () => {
+  clipboard.writeText(`${config.server.host}:${config.server.port}`);
+  return true;
 });
