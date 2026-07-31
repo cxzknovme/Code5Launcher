@@ -105,3 +105,50 @@ document.getElementById('copy-server').addEventListener('click', async () => {
   await window.launcher.copyServer();
   setTransientStatus('Адрес сервера скопирован');
 });
+
+// --- Скин ---
+const skinImg = document.getElementById('skin-img');
+const skinPick = document.getElementById('skin-pick');
+const modelClassic = document.getElementById('model-classic');
+const modelSlim = document.getElementById('model-slim');
+let skinModel = 'classic';
+
+function setModelUI(model) {
+  skinModel = model === 'slim' ? 'slim' : 'classic';
+  modelClassic.classList.toggle('active', skinModel === 'classic');
+  modelSlim.classList.toggle('active', skinModel === 'slim');
+}
+
+function setSkinPreview(dataUrl) {
+  if (dataUrl) {
+    skinImg.src = dataUrl;
+    skinImg.classList.add('has');
+  } else {
+    skinImg.removeAttribute('src');
+    skinImg.classList.remove('has');
+  }
+}
+
+window.launcher.getSkin().then((skin) => {
+  setModelUI(skin.model);
+  setSkinPreview(skin.dataUrl);
+});
+
+skinPick.addEventListener('click', async () => {
+  const result = await window.launcher.chooseSkin(skinModel);
+  if (result.canceled) return;
+  if (!result.ok) {
+    showError('Скин: ' + (result.error || 'не удалось'));
+    return;
+  }
+  setSkinPreview(result.dataUrl);
+  setModelUI(result.model);
+  setTransientStatus('Скин сохранён');
+});
+
+async function chooseModel(model) {
+  const result = await window.launcher.setSkinModel(model);
+  setModelUI(result.ok ? result.model : model);
+}
+modelClassic.addEventListener('click', () => chooseModel('classic'));
+modelSlim.addEventListener('click', () => chooseModel('slim'));

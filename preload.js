@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('launcher', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   play: (nick) => ipcRenderer.invoke('play', nick),
+  getSkin: () => ipcRenderer.invoke('get-skin'),
+  chooseSkin: (model) => ipcRenderer.invoke('choose-skin', model),
+  setSkinModel: (model) => ipcRenderer.invoke('set-skin-model', model),
   minimize: () => ipcRenderer.invoke('window:minimize'),
   close: () => ipcRenderer.invoke('window:close'),
   openGameDir: () => ipcRenderer.invoke('open-game-dir'),

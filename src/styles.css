@@ -263,6 +263,95 @@ button {
   height: 15px;
 }
 
+.account-aux {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.skin-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(24, 25, 31, 0.76);
+}
+
+.skin-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 5px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(45deg, #1b1c22 25%, transparent 25% 75%, #1b1c22 75%) 0 0 / 10px 10px,
+    linear-gradient(45deg, #1b1c22 25%, #0f1014 25% 75%, #1b1c22 75%) 5px 5px / 10px 10px;
+}
+
+.skin-avatar img {
+  width: 0;
+  height: 0;
+}
+
+.skin-avatar img.has {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.skin-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line-gold);
+  border-radius: 6px;
+  background: rgba(232, 184, 67, 0.07);
+  color: var(--gold-bright);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.skin-pick svg {
+  width: 14px;
+  height: 14px;
+}
+
+.skin-pick:hover {
+  background: rgba(232, 184, 67, 0.14);
+}
+
+.skin-model {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.skin-seg {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.skin-seg.active {
+  background: var(--gold);
+  color: #17130a;
+  font-weight: 700;
+}
+
 .brand-stage {
   min-height: 0;
   display: grid;

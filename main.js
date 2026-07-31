@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -188,4 +188,75 @@ ipcMain.handle('open-game-dir', async () => {
 ipcMain.handle('copy-server', () => {
   clipboard.writeText(`${config.server.host}:${config.server.port}`);
   return true;
+});
+
+// --- Скины (оффлайн) ---
+// Лаунчер кладёт выбранный PNG в <gameDir>/code5/skin.png (+ модель). Мод при заходе
+// читает файл и шлёт скин на сервер для раздачи остальным (без внешнего скин-сервера).
+function skinDir() {
+  return path.join(dataDir(), 'code5');
+}
+function skinPngPath() {
+  return path.join(skinDir(), 'skin.png');
+}
+function skinModelPath() {
+  return path.join(skinDir(), 'skin_model.txt');
+}
+function pngSize(buf) {
+  if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) return null;
+  return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+}
+function readSkinModel() {
+  try {
+    return fs.readFileSync(skinModelPath(), 'utf8').trim().toLowerCase() === 'slim' ? 'slim' : 'classic';
+  } catch {
+    return 'classic';
+  }
+}
+function skinDataUrl() {
+  try {
+    return 'data:image/png;base64,' + fs.readFileSync(skinPngPath()).toString('base64');
+  } catch {
+    return null;
+  }
+}
+
+ipcMain.handle('get-skin', () => {
+  const exists = fs.existsSync(skinPngPath());
+  return { exists, dataUrl: exists ? skinDataUrl() : null, model: readSkinModel() };
+});
+
+ipcMain.handle('choose-skin', async (_event, model) => {
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Выберите скин (PNG 64×64)',
+    filters: [{ name: 'Skin PNG', extensions: ['png'] }],
+    properties: ['openFile']
+  });
+  if (result.canceled || !result.filePaths || !result.filePaths[0]) return { ok: false, canceled: true };
+
+  let buf;
+  try {
+    buf = fs.readFileSync(result.filePaths[0]);
+  } catch {
+    return { ok: false, error: 'Не удалось прочитать файл.' };
+  }
+  const size = pngSize(buf);
+  if (!size) return { ok: false, error: 'Это не PNG.' };
+  if (size.w !== 64 || (size.h !== 64 && size.h !== 32)) {
+    return { ok: false, error: `Скин должен быть 64×64 (у вас ${size.w}×${size.h}).` };
+  }
+
+  fs.mkdirSync(skinDir(), { recursive: true });
+  fs.writeFileSync(skinPngPath(), buf);
+  const chosen = model === 'slim' ? 'slim' : 'classic';
+  fs.writeFileSync(skinModelPath(), chosen);
+  return { ok: true, dataUrl: 'data:image/png;base64,' + buf.toString('base64'), model: chosen };
+});
+
+ipcMain.handle('set-skin-model', (_event, model) => {
+  if (!fs.existsSync(skinPngPath())) return { ok: false, error: 'Сначала выберите скин.' };
+  const chosen = model === 'slim' ? 'slim' : 'classic';
+  fs.mkdirSync(skinDir(), { recursive: true });
+  fs.writeFileSync(skinModelPath(), chosen);
+  return { ok: true, model: chosen };
 });

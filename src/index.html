@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self';"
+      content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self';"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Code5 Launcher</title>
@@ -74,9 +74,22 @@
               </span>
               <i class="verified" data-lucide="badge-check"></i>
             </label>
-            <div class="release-badge">
-              <i data-lucide="sparkles"></i>
-              <span>Release</span>
+            <div class="account-aux">
+              <div class="skin-control">
+                <span class="skin-avatar"><img id="skin-img" alt="" /></span>
+                <button id="skin-pick" class="skin-pick" type="button" title="Выбрать скин (PNG 64×64)">
+                  <i data-lucide="shirt"></i>
+                  <span>Скин</span>
+                </button>
+                <div class="skin-model">
+                  <button id="model-classic" class="skin-seg active" type="button">Classic</button>
+                  <button id="model-slim" class="skin-seg" type="button">Slim</button>
+                </div>
+              </div>
+              <div class="release-badge">
+                <i data-lucide="sparkles"></i>
+                <span>Release</span>
+              </div>
             </div>
           </section>
 
