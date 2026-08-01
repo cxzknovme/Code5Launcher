@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self'; style-src 'self'; script-src 'self';"
+      content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self';"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Code5 Launcher</title>
@@ -80,36 +80,72 @@
             </div>
           </section>
 
-          <section class="brand-stage">
-            <div class="brand-lockup">
-              <img class="hero-logo" src="../assets/code5-icon.png" alt="Code5" />
-              <div>
-                <p class="eyebrow">Minecraft Launcher</p>
-                <h1>Code5</h1>
-                <p class="server-address" id="server-address">65.108.18.26:25790</p>
+          <section class="showcase">
+            <div class="world-intro">
+              <div class="brand-lockup">
+                <img class="hero-logo" src="../assets/code5-icon.png" alt="Code5" />
+                <div>
+                  <p class="eyebrow">Minecraft Launcher</p>
+                  <h1>Code5</h1>
+                  <button id="server-address" class="server-address" type="button" title="Копировать адрес сервера">
+                    65.108.18.26:25790
+                  </button>
+                </div>
+              </div>
+
+              <div class="server-facts">
+                <div class="panel-heading">
+                  <span class="blue-marker"></span>
+                  <span>Code5 World</span>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Minecraft</dt>
+                    <dd id="minecraft-version">1.21.1</dd>
+                  </div>
+                  <div>
+                    <dt>NeoForge</dt>
+                    <dd id="neoforge-version">21.1.235</dd>
+                  </div>
+                  <div>
+                    <dt>Лаунчер</dt>
+                    <dd id="launcher-version">v1.0.5</dd>
+                  </div>
+                </dl>
               </div>
             </div>
 
-            <div class="server-panel">
-              <div class="panel-heading">
-                <span class="blue-marker"></span>
-                <span>Code5 World</span>
+            <section class="skin-studio" aria-labelledby="skin-title">
+              <div class="skin-heading">
+                <div>
+                  <p class="eyebrow">Персонаж</p>
+                  <h2 id="skin-title">Ваш скин</h2>
+                </div>
+                <div class="skin-actions">
+                  <button id="choose-skin" class="choose-skin" type="button">
+                    <i data-lucide="upload"></i>
+                    <span>Выбрать PNG</span>
+                  </button>
+                  <button id="remove-skin" class="skin-icon-button" type="button" title="Сбросить скин" aria-label="Сбросить скин">
+                    <i data-lucide="trash-2"></i>
+                  </button>
+                </div>
               </div>
-              <dl>
-                <div>
-                  <dt>Minecraft</dt>
-                  <dd id="minecraft-version">1.21.1</dd>
+
+              <div class="skin-viewer-wrap">
+                <canvas id="skin-viewer" aria-label="Трёхмерная модель персонажа"></canvas>
+                <div class="skin-glow" aria-hidden="true"></div>
+                <span id="skin-state" class="skin-state">Базовый образ</span>
+              </div>
+
+              <div class="skin-toolbar">
+                <div class="model-toggle" aria-label="Тип модели">
+                  <button class="model-option active" type="button" data-model="default">Обычные</button>
+                  <button class="model-option" type="button" data-model="slim">Тонкие</button>
                 </div>
-                <div>
-                  <dt>NeoForge</dt>
-                  <dd id="neoforge-version">21.1.235</dd>
-                </div>
-                <div>
-                  <dt>Лаунчер</dt>
-                  <dd id="launcher-version">v1.0.2</dd>
-                </div>
-              </dl>
-            </div>
+                <span id="skin-file" class="skin-file">Скин не выбран</span>
+              </div>
+            </section>
           </section>
 
           <footer class="launch-dock">
@@ -142,6 +178,7 @@
     </div>
 
     <script src="../node_modules/lucide/dist/umd/lucide.min.js"></script>
+    <script src="../node_modules/skinview3d/bundles/skinview3d.bundle.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

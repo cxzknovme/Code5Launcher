@@ -181,8 +181,8 @@ button {
 .content {
   min-width: 0;
   display: grid;
-  grid-template-rows: 84px 1fr 126px;
-  padding: 0 32px;
+  grid-template-rows: 78px 1fr 118px;
+  padding: 0 28px;
 }
 
 .account-row {
@@ -263,27 +263,36 @@ button {
   height: 15px;
 }
 
-.brand-stage {
+.showcase {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 286px;
-  align-items: center;
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) 430px;
+  align-items: stretch;
+  gap: 28px;
+  padding: 22px 0 18px;
+}
+
+.world-intro {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 30px;
 }
 
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 22px;
   min-width: 0;
 }
 
 .hero-logo {
-  width: 204px;
-  height: 204px;
+  width: 116px;
+  height: 116px;
   flex: 0 0 auto;
   border-radius: 8px;
-  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.52));
 }
 
 .eyebrow {
@@ -297,25 +306,30 @@ button {
 .brand-lockup h1 {
   margin: 0;
   color: var(--text);
-  font-size: 62px;
+  font-size: 48px;
   line-height: 0.98;
   font-weight: 800;
 }
 
 .server-address {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
   color: var(--muted);
+  background: transparent;
   font-size: 15px;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
-.server-panel {
-  align-self: center;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(18, 19, 24, 0.78);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+.server-address:hover {
+  color: var(--gold-bright);
+}
+
+.server-facts {
+  max-width: 370px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .panel-heading {
@@ -336,12 +350,12 @@ button {
   box-shadow: 0 0 12px rgba(47, 140, 255, 0.58);
 }
 
-.server-panel dl {
+.server-facts dl {
   margin: 4px 0 0;
 }
 
-.server-panel dl > div {
-  min-height: 39px;
+.server-facts dl > div {
+  min-height: 35px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -349,16 +363,16 @@ button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.server-panel dl > div:last-child {
+.server-facts dl > div:last-child {
   border-bottom: 0;
 }
 
-.server-panel dt {
+.server-facts dt {
   color: var(--muted);
   font-size: 11px;
 }
 
-.server-panel dd {
+.server-facts dd {
   margin: 0;
   color: #dedbd2;
   font-size: 12px;
@@ -366,17 +380,202 @@ button {
   text-align: right;
 }
 
+.skin-studio {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr) 42px;
+  gap: 10px;
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+
+.skin-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.skin-heading .eyebrow {
+  margin-bottom: 2px;
+  font-size: 9px;
+}
+
+.skin-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 750;
+}
+
+.skin-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.choose-skin {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line-gold);
+  border-radius: 6px;
+  color: var(--gold-bright);
+  background: rgba(232, 184, 67, 0.07);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.choose-skin svg,
+.skin-icon-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.choose-skin:hover {
+  border-color: var(--gold);
+  background: rgba(232, 184, 67, 0.12);
+}
+
+.skin-icon-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+}
+
+.skin-icon-button:hover:not(:disabled) {
+  color: #ffd0ce;
+  border-color: rgba(218, 91, 84, 0.42);
+  background: rgba(218, 91, 84, 0.08);
+}
+
+.skin-icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.skin-viewer-wrap {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(47, 140, 255, 0.035), transparent 34%),
+    #0d0f13;
+}
+
+#skin-viewer {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+#skin-viewer:active {
+  cursor: grabbing;
+}
+
+.skin-glow {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 27px;
+  width: 190px;
+  height: 1px;
+  transform: translateX(-50%);
+  background: var(--gold-deep);
+  box-shadow: 0 0 20px rgba(232, 184, 67, 0.28);
+}
+
+.skin-state {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  bottom: 10px;
+  padding-left: 11px;
+  color: #a7a8af;
+  font-size: 10px;
+}
+
+.skin-state::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--blue);
+}
+
+.skin-toolbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.model-toggle {
+  height: 32px;
+  display: grid;
+  grid-template-columns: repeat(2, 82px);
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #101116;
+}
+
+.model-option {
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  color: #7f8189;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.model-option.active {
+  color: #211707;
+  background: var(--gold);
+}
+
+.skin-file {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .launch-dock {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 210px 1fr;
   align-items: center;
   gap: 28px;
   border-top: 1px solid var(--line);
 }
 
 .play-button {
-  width: 220px;
-  height: 64px;
+  width: 210px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;

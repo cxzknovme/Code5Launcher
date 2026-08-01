@@ -1,6 +1,6 @@
 {
   "name": "code5-launcher",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Code5 custom Minecraft launcher — offline nick, auto-update mods, auto-join server",
   "main": "main.js",
   "author": "knovme",
@@ -21,6 +21,7 @@
     "extract-zip": "^2.0.1",
     "lucide": "^1.27.0",
     "minecraft-launcher-core": "^3.18.2",
+    "skinview3d": "^3.4.2",
     "tar": "^7.5.22"
   },
   "devDependencies": {

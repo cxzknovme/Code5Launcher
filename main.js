@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -19,6 +19,47 @@ autoUpdater.allowPrerelease = false;
 
 function dataDir() {
   return path.join(app.getPath('appData'), 'Code5Launcher');
+}
+
+function skinDir() {
+  return path.join(dataDir(), 'code5');
+}
+
+function skinModel() {
+  const modelPath = path.join(skinDir(), 'skin_model.txt');
+  if (!fs.existsSync(modelPath)) return 'default';
+  return fs.readFileSync(modelPath, 'utf8').trim().toLowerCase() === 'slim' ? 'slim' : 'default';
+}
+
+function currentSkin() {
+  const selectedPath = path.join(skinDir(), 'skin.png');
+  const namePath = path.join(skinDir(), 'skin_name.txt');
+  const selected = fs.existsSync(selectedPath);
+
+  return {
+    selected,
+    model: skinModel(),
+    fileName: selected && fs.existsSync(namePath) ? fs.readFileSync(namePath, 'utf8').trim() : '',
+    dataUrl: selected
+      ? `data:image/png;base64,${fs.readFileSync(selectedPath).toString('base64')}`
+      : null
+  };
+}
+
+function validateSkin(sourcePath) {
+  const stat = fs.statSync(sourcePath);
+  if (stat.size === 0 || stat.size > 512 * 1024) {
+    throw new Error('Скин должен быть PNG-файлом размером не более 512 КБ.');
+  }
+
+  const image = nativeImage.createFromPath(sourcePath);
+  if (image.isEmpty()) throw new Error('Не удалось прочитать PNG-файл скина.');
+
+  const { width, height } = image.getSize();
+  const validShape = width === height || width === height * 2;
+  if (!validShape || width < 64 || height < 32) {
+    throw new Error('Поддерживаются квадратные HD-скины и классические PNG 64x32.');
+  }
 }
 
 function send(channel, payload) {
@@ -188,4 +229,43 @@ ipcMain.handle('open-game-dir', async () => {
 ipcMain.handle('copy-server', () => {
   clipboard.writeText(`${config.server.host}:${config.server.port}`);
   return true;
+});
+
+ipcMain.handle('skin:get', () => currentSkin());
+
+ipcMain.handle('skin:choose', async (event) => {
+  const owner = BrowserWindow.fromWebContents(event.sender);
+  const result = await dialog.showOpenDialog(owner, {
+    title: 'Выберите скин Minecraft',
+    properties: ['openFile'],
+    filters: [{ name: 'Minecraft skin', extensions: ['png'] }]
+  });
+
+  if (result.canceled || result.filePaths.length === 0) return currentSkin();
+
+  const sourcePath = result.filePaths[0];
+  validateSkin(sourcePath);
+  fs.mkdirSync(skinDir(), { recursive: true });
+
+  const destination = path.join(skinDir(), 'skin.png');
+  if (path.resolve(sourcePath) !== path.resolve(destination)) {
+    fs.copyFileSync(sourcePath, destination);
+  }
+  fs.writeFileSync(path.join(skinDir(), 'skin_name.txt'), path.basename(sourcePath), 'utf8');
+  return currentSkin();
+});
+
+ipcMain.handle('skin:set-model', (_event, requestedModel) => {
+  const model = requestedModel === 'slim' ? 'slim' : 'default';
+  fs.mkdirSync(skinDir(), { recursive: true });
+  fs.writeFileSync(path.join(skinDir(), 'skin_model.txt'), model, 'utf8');
+  return currentSkin();
+});
+
+ipcMain.handle('skin:remove', () => {
+  for (const fileName of ['skin.png', 'skin_model.txt', 'skin_name.txt']) {
+    const target = path.join(skinDir(), fileName);
+    if (fs.existsSync(target)) fs.unlinkSync(target);
+  }
+  return currentSkin();
 });
