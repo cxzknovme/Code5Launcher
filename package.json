@@ -1,6 +1,6 @@
 {
   "name": "code5-launcher",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Code5 custom Minecraft launcher — offline nick, auto-update mods, auto-join server",
   "main": "main.js",
   "author": "knovme",
@@ -50,7 +50,6 @@
     "win": {
       "target": "nsis",
       "icon": "assets/code5-icon.png",
-      "signAndEditExecutable": false,
       "artifactName": "Code5Launcher-Windows.${ext}"
     },
     "nsis": {
