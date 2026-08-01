@@ -9,64 +9,73 @@ const skinCanvas = document.getElementById('skin-viewer');
 const skinState = document.getElementById('skin-state');
 const skinFile = document.getElementById('skin-file');
 const chooseSkin = document.getElementById('choose-skin');
-const removeSkin = document.getElementById('remove-skin');
+const resetSkin = document.getElementById('reset-skin');
 const modelOptions = [...document.querySelectorAll('.model-option')];
+const settingsBackdrop = document.getElementById('settings-backdrop');
+const settingsPanel = document.getElementById('settings-panel');
+const openSettingsButton = document.getElementById('open-settings');
+const closeSettingsButton = document.getElementById('close-settings');
+const themeOptions = [...document.querySelectorAll('.theme-option')];
+const memorySlider = document.getElementById('memory');
+const memoryValue = document.getElementById('memory-value');
+const autoRotate = document.getElementById('auto-rotate');
+
+const SETTINGS_KEY = 'code5-settings';
+const DEFAULT_SETTINGS = { theme: 'system', memoryGb: 3, autoRotate: true };
+const systemTheme = window.matchMedia('(prefers-color-scheme: light)');
 
 let busy = false;
 let updateLocked = true;
 let errorTimer = null;
 let skinViewer = null;
 let skinSelection = null;
+let settings = loadSettings();
 
-window.lucide.createIcons({
-  attrs: {
-    'stroke-width': 2
-  }
-});
-
+window.lucide.createIcons({ attrs: { 'stroke-width': 2 } });
 nick.value = localStorage.getItem('nick') || '';
 
-function defaultSkinDataUrl() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 64;
-  const context = canvas.getContext('2d');
-  context.imageSmoothingEnabled = false;
+function loadSettings() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    const theme = ['system', 'dark', 'light'].includes(stored.theme)
+      ? stored.theme
+      : DEFAULT_SETTINGS.theme;
+    const parsedMemory = Math.round(Number(stored.memoryGb));
+    const memoryGb = Number.isFinite(parsedMemory)
+      ? Math.max(2, Math.min(12, parsedMemory))
+      : DEFAULT_SETTINGS.memoryGb;
 
-  const fillPart = (x, y, width, height, base, accent) => {
-    context.fillStyle = base;
-    context.fillRect(x, y, width, height);
-    context.fillStyle = accent;
-    for (let row = y; row < y + height; row += 4) {
-      context.fillRect(x, row, width, 1);
-    }
-  };
-
-  fillPart(0, 0, 32, 16, '#c78a34', '#e8b843');
-  fillPart(0, 16, 16, 16, '#17191f', '#292c34');
-  fillPart(16, 16, 24, 16, '#111319', '#242731');
-  fillPart(40, 16, 16, 16, '#17191f', '#292c34');
-  fillPart(16, 48, 16, 16, '#111319', '#242731');
-  fillPart(32, 48, 16, 16, '#17191f', '#292c34');
-
-  context.fillStyle = '#dca74c';
-  context.fillRect(8, 8, 8, 8);
-  context.fillStyle = '#17191f';
-  context.fillRect(9, 11, 2, 1);
-  context.fillRect(14, 11, 2, 1);
-  context.fillStyle = '#2f8cff';
-  context.fillRect(10, 11, 1, 1);
-  context.fillRect(14, 11, 1, 1);
-  context.fillStyle = '#e8b843';
-  context.fillRect(20, 20, 8, 2);
-  context.fillRect(23, 22, 2, 10);
-  context.fillStyle = '#2f8cff';
-  context.fillRect(23, 24, 2, 2);
-
-  return canvas.toDataURL('image/png');
+    return {
+      theme,
+      memoryGb,
+      autoRotate: typeof stored.autoRotate === 'boolean' ? stored.autoRotate : true
+    };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
-const fallbackSkin = defaultSkinDataUrl();
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function applySettings() {
+  const resolvedTheme = settings.theme === 'system'
+    ? (systemTheme.matches ? 'light' : 'dark')
+    : settings.theme;
+
+  document.documentElement.dataset.theme = resolvedTheme;
+  themeOptions.forEach((button) => {
+    const active = button.dataset.theme === settings.theme;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+
+  memorySlider.value = String(settings.memoryGb);
+  memoryValue.textContent = `${settings.memoryGb} ГБ`;
+  autoRotate.checked = settings.autoRotate;
+  if (skinViewer) skinViewer.autoRotate = settings.autoRotate;
+}
 
 function initSkinViewer() {
   const bounds = skinCanvas.getBoundingClientRect();
@@ -74,14 +83,14 @@ function initSkinViewer() {
     canvas: skinCanvas,
     width: Math.max(1, Math.round(bounds.width)),
     height: Math.max(1, Math.round(bounds.height)),
-    skin: fallbackSkin,
+    skin: '../assets/default-skin.png',
     model: 'default',
     background: null,
     fov: 47,
     zoom: 0.86,
     pixelRatio: 'match-device'
   });
-  skinViewer.autoRotate = true;
+  skinViewer.autoRotate = settings.autoRotate;
   skinViewer.autoRotateSpeed = 0.34;
   skinViewer.animation = new window.skinview3d.IdleAnimation();
   skinViewer.animation.speed = 0.72;
@@ -100,14 +109,14 @@ function initSkinViewer() {
 async function renderSkin(selection) {
   skinSelection = selection;
   const model = selection.model === 'slim' ? 'slim' : 'default';
-  const source = selection.selected && selection.dataUrl ? selection.dataUrl : fallbackSkin;
+  const source = selection.dataUrl || '../assets/default-skin.png';
 
   modelOptions.forEach((button) => {
     button.classList.toggle('active', button.dataset.model === model);
   });
-  removeSkin.disabled = !selection.selected;
-  skinState.textContent = selection.selected ? 'Скин активен' : 'Базовый образ';
-  skinFile.textContent = selection.selected ? selection.fileName || 'skin.png' : 'Скин не выбран';
+  resetSkin.disabled = Boolean(selection.isDefault) && model === 'default';
+  skinState.textContent = selection.isDefault ? 'Стандартный' : 'Скин активен';
+  skinFile.textContent = selection.fileName || (selection.isDefault ? 'Hermit' : 'skin.png');
   skinFile.title = skinFile.textContent;
 
   await skinViewer.loadSkin(source, { model });
@@ -140,22 +149,32 @@ function setTransientStatus(message) {
   }, 1800);
 }
 
-window.launcher.getConfig().then((config) => {
-  const address = `${config.server.host}:${config.server.port}`;
-  document.getElementById('server-address').textContent = address;
-  document.getElementById('minecraft-version').textContent = config.mcVersion;
-  document.getElementById('neoforge-version').textContent = config.neoforgeVersion;
-  document.getElementById('launcher-version').textContent = `v${config.appVersion}`;
-});
+function openSettings() {
+  settingsBackdrop.hidden = false;
+  settingsPanel.setAttribute('aria-hidden', 'false');
+  openSettingsButton.classList.add('active');
+  closeSettingsButton.focus();
+}
 
+function closeSettings() {
+  settingsBackdrop.hidden = true;
+  settingsPanel.setAttribute('aria-hidden', 'true');
+  openSettingsButton.classList.remove('active');
+  openSettingsButton.focus();
+}
+
+applySettings();
 initSkinViewer();
 window.launcher.getSkin().then(renderSkin).catch((error) => showError(error.message || String(error)));
+
+systemTheme.addEventListener('change', () => {
+  if (settings.theme === 'system') applySettings();
+});
 
 window.launcher.onStatus((payload) => {
   status.textContent = payload.message;
   document.body.dataset.state = payload.state || 'idle';
-  updateLocked =
-    Boolean(payload.locked) && ['checking', 'updating', 'restarting'].includes(payload.state);
+  updateLocked = Boolean(payload.locked) && ['checking', 'updating', 'restarting'].includes(payload.state);
   syncPlayState();
 });
 
@@ -177,7 +196,7 @@ async function start() {
   setProgress(0);
 
   try {
-    const result = await window.launcher.play(name);
+    const result = await window.launcher.play(name, { memoryGb: settings.memoryGb });
     if (!result.ok) showError(result.error || 'Не удалось запустить игру.');
   } catch (error) {
     showError(error.message || String(error));
@@ -195,35 +214,63 @@ nick.addEventListener('keydown', (event) => {
 
 document.getElementById('minimize').addEventListener('click', () => window.launcher.minimize());
 document.getElementById('close').addEventListener('click', () => window.launcher.close());
-document.getElementById('open-folder').addEventListener('click', async () => {
-  await window.launcher.openGameDir();
-  setTransientStatus('Папка игры открыта');
+openSettingsButton.addEventListener('click', openSettings);
+closeSettingsButton.addEventListener('click', closeSettings);
+settingsBackdrop.addEventListener('click', (event) => {
+  if (event.target === settingsBackdrop) closeSettings();
 });
-document.getElementById('copy-server').addEventListener('click', async () => {
-  await window.launcher.copyServer();
-  setTransientStatus('Адрес сервера скопирован');
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !settingsBackdrop.hidden) closeSettings();
 });
 
-document.getElementById('server-address').addEventListener('click', async () => {
-  await window.launcher.copyServer();
-  setTransientStatus('Адрес сервера скопирован');
+themeOptions.forEach((button) => {
+  button.addEventListener('click', () => {
+    settings.theme = button.dataset.theme;
+    saveSettings();
+    applySettings();
+  });
+});
+
+memorySlider.addEventListener('input', () => {
+  settings.memoryGb = Number(memorySlider.value);
+  memoryValue.textContent = `${settings.memoryGb} ГБ`;
+  saveSettings();
+});
+
+autoRotate.addEventListener('change', () => {
+  settings.autoRotate = autoRotate.checked;
+  saveSettings();
+  applySettings();
+});
+
+document.getElementById('open-folder').addEventListener('click', async () => {
+  await window.launcher.openGameDir();
+  closeSettings();
+  setTransientStatus('Папка игры открыта');
+});
+
+document.getElementById('reset-settings').addEventListener('click', () => {
+  settings = { ...DEFAULT_SETTINGS };
+  saveSettings();
+  applySettings();
+  setTransientStatus('Настройки сброшены');
 });
 
 chooseSkin.addEventListener('click', async () => {
   try {
     const selection = await window.launcher.chooseSkin();
     await renderSkin(selection);
-    if (selection.selected) setTransientStatus('Скин выбран');
+    if (!selection.isDefault) setTransientStatus('Скин выбран');
   } catch (error) {
     showError(error.message || String(error));
   }
 });
 
-removeSkin.addEventListener('click', async () => {
-  if (!skinSelection?.selected) return;
+resetSkin.addEventListener('click', async () => {
+  if (skinSelection?.isDefault && skinSelection?.model === 'default') return;
   try {
-    await renderSkin(await window.launcher.removeSkin());
-    setTransientStatus('Скин сброшен');
+    await renderSkin(await window.launcher.resetSkin());
+    setTransientStatus('Стандартный скин восстановлен');
   } catch (error) {
     showError(error.message || String(error));
   }

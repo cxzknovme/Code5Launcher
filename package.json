@@ -1,7 +1,7 @@
 {
   "name": "code5-launcher",
-  "version": "1.0.6",
-  "description": "Code5 custom Minecraft launcher — offline nick, auto-update mods, auto-join server",
+  "version": "1.0.7",
+  "description": "Code5 Minecraft launcher with skins and automatic updates",
   "main": "main.js",
   "author": "knovme",
   "license": "GPL-3.0-or-later",

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -25,6 +25,35 @@ function skinDir() {
   return path.join(dataDir(), 'code5');
 }
 
+function resetToDefaultSkin() {
+  const dir = skinDir();
+  fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync(path.join(__dirname, 'assets', 'default-skin.png'), path.join(dir, 'skin.png'));
+  fs.writeFileSync(path.join(dir, 'skin_model.txt'), 'default', 'utf8');
+  fs.writeFileSync(path.join(dir, 'skin_name.txt'), 'Hermit', 'utf8');
+  fs.writeFileSync(path.join(dir, 'skin_source.txt'), 'default', 'utf8');
+}
+
+function ensureDefaultSkin() {
+  const dir = skinDir();
+  const selectedPath = path.join(dir, 'skin.png');
+  const sourcePath = path.join(dir, 'skin_source.txt');
+
+  if (!fs.existsSync(selectedPath)) {
+    resetToDefaultSkin();
+    return;
+  }
+
+  fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(sourcePath)) fs.writeFileSync(sourcePath, 'custom', 'utf8');
+  if (!fs.existsSync(path.join(dir, 'skin_name.txt'))) {
+    fs.writeFileSync(path.join(dir, 'skin_name.txt'), 'skin.png', 'utf8');
+  }
+  if (!fs.existsSync(path.join(dir, 'skin_model.txt'))) {
+    fs.writeFileSync(path.join(dir, 'skin_model.txt'), 'default', 'utf8');
+  }
+}
+
 function skinModel() {
   const modelPath = path.join(skinDir(), 'skin_model.txt');
   if (!fs.existsSync(modelPath)) return 'default';
@@ -32,17 +61,18 @@ function skinModel() {
 }
 
 function currentSkin() {
+  ensureDefaultSkin();
   const selectedPath = path.join(skinDir(), 'skin.png');
   const namePath = path.join(skinDir(), 'skin_name.txt');
-  const selected = fs.existsSync(selectedPath);
+  const sourcePath = path.join(skinDir(), 'skin_source.txt');
+  const isDefault = fs.readFileSync(sourcePath, 'utf8').trim() !== 'custom';
 
   return {
-    selected,
+    selected: true,
+    isDefault,
     model: skinModel(),
-    fileName: selected && fs.existsSync(namePath) ? fs.readFileSync(namePath, 'utf8').trim() : '',
-    dataUrl: selected
-      ? `data:image/png;base64,${fs.readFileSync(selectedPath).toString('base64')}`
-      : null
+    fileName: fs.existsSync(namePath) ? fs.readFileSync(namePath, 'utf8').trim() : 'Hermit',
+    dataUrl: `data:image/png;base64,${fs.readFileSync(selectedPath).toString('base64')}`
   };
 }
 
@@ -155,6 +185,7 @@ function checkLauncherUpdates() {
 }
 
 app.whenReady().then(() => {
+  ensureDefaultSkin();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -170,12 +201,7 @@ const io = {
   progress: sendProgress
 };
 
-ipcMain.handle('get-config', () => ({
-  ...config,
-  appVersion: app.getVersion()
-}));
-
-ipcMain.handle('play', async (_event, nick) => {
+ipcMain.handle('play', async (_event, nick, requestedSettings = {}) => {
   if (launcherUpdating) {
     return { ok: false, error: 'Дождитесь установки обновления лаунчера.' };
   }
@@ -189,7 +215,16 @@ ipcMain.handle('play', async (_event, nick) => {
   }
 
   const dir = dataDir();
+  const requestedMemory = Number(requestedSettings.memoryGb);
+  const memoryGb = Number.isInteger(requestedMemory)
+    ? Math.max(2, Math.min(12, requestedMemory))
+    : 3;
+  const launchConfig = {
+    ...config,
+    memory: { min: '1G', max: `${memoryGb}G` }
+  };
   fs.mkdirSync(dir, { recursive: true });
+  ensureDefaultSkin();
   playInProgress = true;
   sendProgress(0);
 
@@ -197,7 +232,7 @@ ipcMain.handle('play', async (_event, nick) => {
     sendStatus('Проверяем игровые файлы', 'working', true);
     await syncMods(config, dir, io);
     sendStatus('Запускаем Minecraft', 'launching', true);
-    await launchGame(config, dir, cleanNick, io);
+    await launchGame(launchConfig, dir, cleanNick, io);
     sendProgress(100);
     sendStatus('Готов к игре');
     return { ok: true };
@@ -226,11 +261,6 @@ ipcMain.handle('open-game-dir', async () => {
   return shell.openPath(dir);
 });
 
-ipcMain.handle('copy-server', () => {
-  clipboard.writeText(`${config.server.host}:${config.server.port}`);
-  return true;
-});
-
 ipcMain.handle('skin:get', () => currentSkin());
 
 ipcMain.handle('skin:choose', async (event) => {
@@ -252,6 +282,7 @@ ipcMain.handle('skin:choose', async (event) => {
     fs.copyFileSync(sourcePath, destination);
   }
   fs.writeFileSync(path.join(skinDir(), 'skin_name.txt'), path.basename(sourcePath), 'utf8');
+  fs.writeFileSync(path.join(skinDir(), 'skin_source.txt'), 'custom', 'utf8');
   return currentSkin();
 });
 
@@ -262,10 +293,7 @@ ipcMain.handle('skin:set-model', (_event, requestedModel) => {
   return currentSkin();
 });
 
-ipcMain.handle('skin:remove', () => {
-  for (const fileName of ['skin.png', 'skin_model.txt', 'skin_name.txt']) {
-    const target = path.join(skinDir(), fileName);
-    if (fs.existsSync(target)) fs.unlinkSync(target);
-  }
+ipcMain.handle('skin:reset', () => {
+  resetToDefaultSkin();
   return currentSkin();
 });
