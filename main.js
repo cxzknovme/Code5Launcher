@@ -1,10 +1,12 @@
-const { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, nativeImage, safeStorage, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
 const { syncMods } = require('./lib/updater');
 const { launchGame } = require('./lib/launch');
+const { AuthApiError, AuthClient } = require('./lib/auth-client');
+const { AuthSession } = require('./lib/auth-session');
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 
@@ -12,6 +14,7 @@ let win = null;
 let updateCheckStarted = false;
 let launcherUpdating = false;
 let playInProgress = false;
+let authSession = null;
 
 autoUpdater.autoDownload = true;
 autoUpdater.autoInstallOnAppQuit = true;
@@ -23,6 +26,24 @@ function dataDir() {
 
 function skinDir() {
   return path.join(dataDir(), 'code5');
+}
+
+function authApiUrl() {
+  return process.env.CODE5_AUTH_API_URL || config.auth.apiUrl;
+}
+
+function writeLaunchTicket(result) {
+  const dir = skinDir();
+  fs.mkdirSync(dir, { recursive: true });
+  const destination = path.join(dir, 'auth_ticket.json');
+  const temporary = `${destination}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify({
+    ticket: result.ticket,
+    expiresAt: result.expiresAt,
+    gameName: result.user.gameName
+  }), { encoding: 'utf8', mode: 0o600 });
+  if (fs.existsSync(destination)) fs.unlinkSync(destination);
+  fs.renameSync(temporary, destination);
 }
 
 function resetToDefaultSkin() {
@@ -186,6 +207,11 @@ function checkLauncherUpdates() {
 
 app.whenReady().then(() => {
   ensureDefaultSkin();
+  authSession = new AuthSession({
+    client: new AuthClient(authApiUrl()),
+    directory: dataDir(),
+    safeStorage
+  });
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -201,7 +227,43 @@ const io = {
   progress: sendProgress
 };
 
-ipcMain.handle('play', async (_event, nick, requestedSettings = {}) => {
+function authFailure(error) {
+  return {
+    ok: false,
+    code: error.code || 'AUTH_UNAVAILABLE',
+    error: error.message || 'Сервис аккаунтов временно недоступен.',
+    retryAfter: error.retryAfter || 0
+  };
+}
+
+async function authAction(action) {
+  try {
+    return { ok: true, ...(await action()) };
+  } catch (error) {
+    sendStatus('Требуется вход в аккаунт', 'error');
+    return authFailure(error);
+  }
+}
+
+ipcMain.handle('auth:get-state', () => authSession.getState());
+ipcMain.handle('auth:register-request', (_event, payload) => authAction(
+  () => authSession.registerRequest(payload?.email, payload?.password)
+));
+ipcMain.handle('auth:register-verify', (_event, payload) => authAction(
+  () => authSession.registerVerify(payload?.email, payload?.code)
+));
+ipcMain.handle('auth:login', (_event, payload) => authAction(
+  () => authSession.login(payload?.email, payload?.password)
+));
+ipcMain.handle('auth:password-request', (_event, payload) => authAction(
+  () => authSession.passwordRequest(payload?.email)
+));
+ipcMain.handle('auth:password-reset', (_event, payload) => authAction(
+  () => authSession.passwordReset(payload?.email, payload?.code, payload?.password)
+));
+ipcMain.handle('auth:logout', () => authAction(() => authSession.logout()));
+
+ipcMain.handle('play', async (_event, requestedSettings = {}) => {
   if (launcherUpdating) {
     return { ok: false, error: 'Дождитесь установки обновления лаунчера.' };
   }
@@ -209,9 +271,12 @@ ipcMain.handle('play', async (_event, nick, requestedSettings = {}) => {
     return { ok: false, error: 'Игра уже запускается.' };
   }
 
-  const cleanNick = String(nick || '').trim();
-  if (!/^[A-Za-z0-9_]{3,16}$/.test(cleanNick)) {
-    return { ok: false, error: 'Ник: 3–16 символов, латиница, цифры или подчёркивание.' };
+  let account;
+  try {
+    sendStatus('Проверяем аккаунт Code5', 'working', true);
+    account = await authSession.requireSession();
+  } catch (error) {
+    return authFailure(error);
   }
 
   const dir = dataDir();
@@ -232,7 +297,16 @@ ipcMain.handle('play', async (_event, nick, requestedSettings = {}) => {
     sendStatus('Проверяем игровые файлы', 'working', true);
     await syncMods(config, dir, io);
     sendStatus('Запускаем Minecraft', 'launching', true);
-    await launchGame(launchConfig, dir, cleanNick, io);
+    await launchGame(launchConfig, dir, account.gameName, io, async () => {
+      const ticket = await authSession.createLaunchTicket();
+      if (ticket.user.id !== account.id) {
+        throw new AuthApiError('Аккаунт изменился. Войдите снова.', {
+          status: 401,
+          code: 'ACCOUNT_CHANGED'
+        });
+      }
+      writeLaunchTicket(ticket);
+    });
     sendProgress(100);
     sendStatus('Готов к игре');
     return { ok: true };

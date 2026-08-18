@@ -1,7 +1,7 @@
 {
   "name": "code5-launcher",
-  "version": "1.0.7",
-  "description": "Code5 Minecraft launcher with skins and automatic updates",
+  "version": "1.1.0",
+  "description": "Code5 Minecraft launcher with accounts, skins and automatic updates",
   "main": "main.js",
   "author": "knovme",
   "license": "GPL-3.0-or-later",
@@ -12,6 +12,7 @@
   },
   "scripts": {
     "start": "electron .",
+    "test": "node --test test/auth-session.test.js",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac --universal"
@@ -45,7 +46,9 @@
       "!.git/**",
       "!.github/**",
       "!.idea/**",
-      "!.npm-cache/**"
+      "!.npm-cache/**",
+      "!test/**",
+      "!auth-server/**"
     ],
     "win": {
       "target": "nsis",

@@ -1,0 +1,23 @@
+{
+  "name": "code5-auth-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code5 account and launcher authentication API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "helmet": "^8.3.0",
+    "nodemailer": "^9.0.5",
+    "pg": "^8.23.0"
+  }
+}

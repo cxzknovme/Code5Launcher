@@ -29,9 +29,7 @@
 
       <div class="launcher-body">
         <aside class="rail" aria-label="Навигация">
-          <div class="rail-mark">
-            <img src="../assets/code5-icon.png" alt="Code5" />
-          </div>
+          <div class="rail-mark"><img src="../assets/code5-icon.png" alt="Code5" /></div>
           <button class="rail-button active" type="button" title="Главная" aria-label="Главная">
             <i data-lucide="house"></i>
           </button>
@@ -44,21 +42,15 @@
 
         <main class="content">
           <section class="account-row">
-            <label class="account-field" for="nick">
-              <i data-lucide="user-round"></i>
-              <span class="field-copy">
-                <small>Игрок</small>
-                <input
-                  id="nick"
-                  type="text"
-                  maxlength="16"
-                  placeholder="Введите ник"
-                  autocomplete="off"
-                  spellcheck="false"
-                />
+            <button id="account-profile" class="account-profile" type="button" title="Открыть настройки аккаунта">
+              <span id="account-avatar" class="account-avatar">C5</span>
+              <span class="account-copy">
+                <strong id="account-name">Code5</strong>
+                <small id="account-email">Аккаунт не подключён</small>
               </span>
-              <i class="verified" data-lucide="badge-check"></i>
-            </label>
+              <i class="account-verified" data-lucide="badge-check"></i>
+              <i class="account-chevron" data-lucide="chevron-down"></i>
+            </button>
           </section>
 
           <section class="showcase">
@@ -77,8 +69,7 @@
                 </div>
                 <div class="skin-actions">
                   <button id="choose-skin" class="choose-skin" type="button">
-                    <i data-lucide="upload"></i>
-                    <span>Выбрать PNG</span>
+                    <i data-lucide="upload"></i><span>Выбрать PNG</span>
                   </button>
                   <button id="reset-skin" class="skin-icon-button" type="button" title="Вернуть стандартный скин" aria-label="Вернуть стандартный скин">
                     <i data-lucide="rotate-ccw"></i>
@@ -103,23 +94,14 @@
 
           <footer class="launch-dock">
             <button id="play" class="play-button" type="button">
-              <i data-lucide="play"></i>
-              <span>Играть</span>
+              <i data-lucide="play"></i><span>Играть</span>
             </button>
-
             <div class="launch-progress">
               <div class="progress-copy">
                 <strong id="percent">0%</strong>
                 <span id="status" aria-live="polite">Проверяем обновления</span>
               </div>
-              <div
-                class="progress-track"
-                role="progressbar"
-                aria-label="Подготовка игры"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="0"
-              >
+              <div class="progress-track" role="progressbar" aria-label="Подготовка игры" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <div id="bar" class="progress-fill"></div>
               </div>
               <p id="error" class="error-message" aria-live="assertive"></p>
@@ -128,36 +110,154 @@
         </main>
       </div>
 
+      <section id="auth-gate" class="auth-gate" aria-labelledby="auth-title">
+        <div class="auth-brand">
+          <img src="../assets/code5-icon.png" alt="Code5" />
+          <p>Minecraft Launcher</p>
+          <h1>Code5</h1>
+          <div class="auth-brand-line" aria-hidden="true"></div>
+          <div class="auth-brand-status">
+            <i data-lucide="shield-check"></i>
+            <span>Защищённый аккаунт</span>
+          </div>
+        </div>
+
+        <div class="auth-form-shell">
+          <div id="auth-loading" class="auth-loading">
+            <span class="auth-spinner"></span>
+            <span>Проверяем сессию</span>
+          </div>
+
+          <div id="auth-content" hidden>
+            <header class="auth-header">
+              <p class="eyebrow">Аккаунт Code5</p>
+              <h2 id="auth-title">Вход</h2>
+              <p id="auth-subtitle">Продолжите в свой мир.</p>
+            </header>
+
+            <p id="auth-error" class="auth-error" aria-live="assertive"></p>
+
+            <form class="auth-view" data-auth-view="login" novalidate>
+              <label class="auth-field">
+                <span>Почта</span>
+                <span class="auth-input">
+                  <i data-lucide="mail"></i>
+                  <input id="login-email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com" />
+                </span>
+              </label>
+              <label class="auth-field">
+                <span>Пароль</span>
+                <span class="auth-input">
+                  <i data-lucide="lock-keyhole"></i>
+                  <input id="login-password" type="password" maxlength="128" autocomplete="current-password" placeholder="Ваш пароль" />
+                  <button class="password-toggle" type="button" title="Показать пароль" aria-label="Показать пароль"><i data-lucide="eye"></i></button>
+                </span>
+              </label>
+              <button class="auth-primary" type="submit"><i data-lucide="log-in"></i><span>Войти</span></button>
+              <button class="auth-link" type="button" data-auth-target="reset-request">Забыли пароль?</button>
+              <div class="auth-divider"><span>или</span></div>
+              <button class="auth-secondary" type="button" data-auth-target="register">Создать аккаунт</button>
+            </form>
+
+            <form class="auth-view" data-auth-view="register" hidden novalidate>
+              <label class="auth-field">
+                <span>Почта</span>
+                <span class="auth-input"><i data-lucide="mail"></i><input id="register-email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com" /></span>
+              </label>
+              <label class="auth-field">
+                <span>Пароль</span>
+                <span class="auth-input">
+                  <i data-lucide="lock-keyhole"></i>
+                  <input id="register-password" type="password" maxlength="128" autocomplete="new-password" placeholder="Минимум 10 символов" />
+                  <button class="password-toggle" type="button" title="Показать пароль" aria-label="Показать пароль"><i data-lucide="eye"></i></button>
+                </span>
+              </label>
+              <label class="auth-field">
+                <span>Повторите пароль</span>
+                <span class="auth-input"><i data-lucide="shield-check"></i><input id="register-confirm" type="password" maxlength="128" autocomplete="new-password" placeholder="Повторите пароль" /></span>
+              </label>
+              <button class="auth-primary" type="submit"><i data-lucide="mail-check"></i><span>Получить код</span></button>
+              <button class="auth-back" type="button" data-auth-target="login"><i data-lucide="arrow-left"></i><span>Вернуться ко входу</span></button>
+            </form>
+
+            <form class="auth-view" data-auth-view="verify-register" hidden novalidate>
+              <div class="code-recipient">
+                <i data-lucide="mail-check"></i>
+                <span>Код отправлен на <strong id="register-code-email"></strong></span>
+              </div>
+              <div class="otp-inputs" data-otp="register" aria-label="Шестизначный код">
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 1" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 2" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 3" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 4" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 5" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 6" />
+              </div>
+              <button class="auth-primary" type="submit"><i data-lucide="badge-check"></i><span>Подтвердить</span></button>
+              <button id="resend-register" class="auth-link" type="button">Отправить код снова</button>
+              <button class="auth-back" type="button" data-auth-target="register"><i data-lucide="arrow-left"></i><span>Изменить данные</span></button>
+            </form>
+
+            <form class="auth-view" data-auth-view="reset-request" hidden novalidate>
+              <label class="auth-field">
+                <span>Почта аккаунта</span>
+                <span class="auth-input"><i data-lucide="mail"></i><input id="reset-email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com" /></span>
+              </label>
+              <button class="auth-primary" type="submit"><i data-lucide="send"></i><span>Отправить код</span></button>
+              <button class="auth-back" type="button" data-auth-target="login"><i data-lucide="arrow-left"></i><span>Вернуться ко входу</span></button>
+            </form>
+
+            <form class="auth-view" data-auth-view="reset-confirm" hidden novalidate>
+              <div class="code-recipient">
+                <i data-lucide="mail-check"></i>
+                <span>Код отправлен на <strong id="reset-code-email"></strong></span>
+              </div>
+              <div class="otp-inputs" data-otp="reset" aria-label="Шестизначный код восстановления">
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 1" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 2" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 3" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 4" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 5" />
+                <input inputmode="numeric" maxlength="1" aria-label="Цифра 6" />
+              </div>
+              <label class="auth-field">
+                <span>Новый пароль</span>
+                <span class="auth-input"><i data-lucide="lock-keyhole"></i><input id="reset-password" type="password" maxlength="128" autocomplete="new-password" placeholder="Минимум 10 символов" /></span>
+              </label>
+              <label class="auth-field">
+                <span>Повторите пароль</span>
+                <span class="auth-input"><i data-lucide="shield-check"></i><input id="reset-confirm" type="password" maxlength="128" autocomplete="new-password" placeholder="Повторите пароль" /></span>
+              </label>
+              <button class="auth-primary" type="submit"><i data-lucide="key-round"></i><span>Сохранить пароль</span></button>
+              <button id="resend-reset" class="auth-link" type="button">Отправить код снова</button>
+              <button class="auth-back" type="button" data-auth-target="login"><i data-lucide="arrow-left"></i><span>Отмена</span></button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <div id="settings-backdrop" class="settings-backdrop" hidden>
         <aside id="settings-panel" class="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
           <header class="settings-header">
-            <div>
-              <p class="eyebrow">Code5</p>
-              <h2 id="settings-title">Настройки</h2>
-            </div>
-            <button id="close-settings" class="settings-close" type="button" title="Закрыть настройки" aria-label="Закрыть настройки">
-              <i data-lucide="x"></i>
-            </button>
+            <div><p class="eyebrow">Code5</p><h2 id="settings-title">Настройки</h2></div>
+            <button id="close-settings" class="settings-close" type="button" title="Закрыть настройки" aria-label="Закрыть настройки"><i data-lucide="x"></i></button>
           </header>
 
+          <section class="settings-account">
+            <span id="settings-avatar" class="account-avatar">C5</span>
+            <span class="settings-account-copy">
+              <strong id="settings-account-name">Code5</strong>
+              <small id="settings-account-email"></small>
+            </span>
+            <button id="logout" class="logout-button" type="button" title="Выйти из аккаунта" aria-label="Выйти из аккаунта"><i data-lucide="log-out"></i></button>
+          </section>
+
           <section class="settings-section">
-            <div class="setting-heading">
-              <i data-lucide="palette"></i>
-              <span>Тема</span>
-            </div>
+            <div class="setting-heading"><i data-lucide="palette"></i><span>Тема</span></div>
             <div class="theme-options" aria-label="Тема оформления">
-              <button class="theme-option active" type="button" data-theme="system">
-                <i data-lucide="monitor"></i>
-                <span>Система</span>
-              </button>
-              <button class="theme-option" type="button" data-theme="dark">
-                <i data-lucide="moon"></i>
-                <span>Тёмная</span>
-              </button>
-              <button class="theme-option" type="button" data-theme="light">
-                <i data-lucide="sun"></i>
-                <span>Светлая</span>
-              </button>
+              <button class="theme-option active" type="button" data-theme="system"><i data-lucide="monitor"></i><span>Система</span></button>
+              <button class="theme-option" type="button" data-theme="dark"><i data-lucide="moon"></i><span>Тёмная</span></button>
+              <button class="theme-option" type="button" data-theme="light"><i data-lucide="sun"></i><span>Светлая</span></button>
             </div>
           </section>
 
@@ -172,25 +272,15 @@
 
           <section class="settings-section setting-row">
             <span class="setting-title"><i data-lucide="rotate-3d"></i><span>Вращение модели</span></span>
-            <label class="switch" title="Вращение 3D-модели">
-              <input id="auto-rotate" type="checkbox" checked />
-              <span class="switch-track"></span>
-            </label>
+            <label class="switch" title="Вращение 3D-модели"><input id="auto-rotate" type="checkbox" checked /><span class="switch-track"></span></label>
           </section>
 
           <section class="settings-section settings-actions">
-            <button id="open-folder" class="settings-action" type="button">
-              <i data-lucide="folder-open"></i>
-              <span>Папка игры</span>
-              <i data-lucide="chevron-right"></i>
-            </button>
+            <button id="open-folder" class="settings-action" type="button"><i data-lucide="folder-open"></i><span>Папка игры</span><i data-lucide="chevron-right"></i></button>
           </section>
 
           <div class="settings-spacer"></div>
-          <button id="reset-settings" class="reset-settings" type="button">
-            <i data-lucide="refresh-ccw"></i>
-            <span>Сбросить настройки</span>
-          </button>
+          <button id="reset-settings" class="reset-settings" type="button"><i data-lucide="refresh-ccw"></i><span>Сбросить настройки</span></button>
         </aside>
       </div>
     </div>

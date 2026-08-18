@@ -22,8 +22,23 @@ jobs:
             exit 1
           fi
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix auth-server
+      - name: Test launcher session security
+        run: npm test
+      - name: Test account API
+        run: npm test --prefix auth-server
+
   build:
-    needs: validate
+    needs: [validate, test]
     strategy:
       fail-fast: false
       matrix:

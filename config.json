@@ -10,6 +10,9 @@
     "githubRepo": "Code5",
     "manifestAsset": "manifest.json"
   },
+  "auth": {
+    "apiUrl": "https://auth.94-249-230-203.sslip.io"
+  },
   "memory": {
     "max": "3G",
     "min": "1G"
