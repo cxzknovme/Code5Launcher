@@ -28,6 +28,35 @@ function skinDir() {
   return path.join(dataDir(), 'code5');
 }
 
+function disconnectReportPath() {
+  return path.join(skinDir(), 'disconnect-report.json');
+}
+
+function clearDisconnectReport() {
+  const report = disconnectReportPath();
+  if (fs.existsSync(report)) fs.unlinkSync(report);
+}
+
+function readDisconnectReport() {
+  const report = disconnectReportPath();
+  if (!fs.existsSync(report)) return null;
+  try {
+    const payload = JSON.parse(fs.readFileSync(report, 'utf8'));
+    return payload.message || 'Соединение с сервером прервано.';
+  } catch {
+    return 'Соединение с сервером прервано.';
+  } finally {
+    if (fs.existsSync(report)) fs.unlinkSync(report);
+  }
+}
+
+function focusLauncher() {
+  if (!win || win.isDestroyed()) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+
 function authApiUrl() {
   return process.env.CODE5_AUTH_API_URL || config.auth.apiUrl;
 }
@@ -247,7 +276,7 @@ async function authAction(action) {
 
 ipcMain.handle('auth:get-state', () => authSession.getState());
 ipcMain.handle('auth:register-request', (_event, payload) => authAction(
-  () => authSession.registerRequest(payload?.email, payload?.password)
+  () => authSession.registerRequest(payload?.email, payload?.password, payload?.gameName)
 ));
 ipcMain.handle('auth:register-verify', (_event, payload) => authAction(
   () => authSession.registerVerify(payload?.email, payload?.code)
@@ -296,6 +325,7 @@ ipcMain.handle('play', async (_event, requestedSettings = {}) => {
   try {
     sendStatus('Проверяем игровые файлы', 'working', true);
     await syncMods(config, dir, io);
+    clearDisconnectReport();
     sendStatus('Запускаем Minecraft', 'launching', true);
     await launchGame(launchConfig, dir, account.gameName, io, async () => {
       const ticket = await authSession.createLaunchTicket();
@@ -307,6 +337,13 @@ ipcMain.handle('play', async (_event, requestedSettings = {}) => {
       }
       writeLaunchTicket(ticket);
     });
+    focusLauncher();
+    const disconnectMessage = readDisconnectReport();
+    if (disconnectMessage) {
+      sendProgress(0);
+      sendStatus('Возврат в лаунчер', 'error');
+      return { ok: false, code: 'SERVER_DISCONNECTED', error: disconnectMessage };
+    }
     sendProgress(100);
     sendStatus('Готов к игре');
     return { ok: true };

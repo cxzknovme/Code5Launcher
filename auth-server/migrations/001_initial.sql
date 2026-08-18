@@ -8,11 +8,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS users_game_name_lower_unique ON users (LOWER(game_name));
+
 CREATE TABLE IF NOT EXISTS email_challenges (
   email VARCHAR(254) NOT NULL,
   purpose VARCHAR(16) NOT NULL CHECK (purpose IN ('register', 'reset')),
   code_hash CHAR(64) NOT NULL,
   password_hash TEXT,
+  game_name VARCHAR(16),
   attempts INTEGER NOT NULL DEFAULT 0,
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

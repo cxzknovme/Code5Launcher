@@ -2,8 +2,8 @@
   "mcVersion": "1.21.1",
   "neoforgeVersion": "21.1.235",
   "server": {
-    "host": "65.108.18.26",
-    "port": 25790
+    "host": "94.249.230.203",
+    "port": 25566
   },
   "update": {
     "githubOwner": "cxzknovme",

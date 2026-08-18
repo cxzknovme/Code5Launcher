@@ -1,9 +1,9 @@
 const crypto = require('crypto');
 const {
   codeHash,
-  gameNameFromEmail,
   hashPassword,
   normalizeEmail,
+  normalizeGameName,
   randomCode,
   randomToken,
   safeEqualText,
@@ -52,6 +52,14 @@ class AuthService {
     }
   }
 
+  gameName(value) {
+    try {
+      return normalizeGameName(value);
+    } catch (error) {
+      throw new AppError(400, 'INVALID_USERNAME', error.message);
+    }
+  }
+
   async assertResendAllowed(email, purpose) {
     const existing = await this.store.getChallenge(email, purpose);
     if (!existing || this.config.codeResendSeconds === 0) return;
@@ -65,12 +73,13 @@ class AuthService {
     }
   }
 
-  async saveAndSendCode({ email, purpose, passwordHashValue = null }) {
+  async saveAndSendCode({ email, purpose, passwordHashValue = null, gameName = null }) {
     const code = randomCode();
     await this.store.saveChallenge({
       email,
       purpose,
       passwordHash: passwordHashValue,
+      gameName,
       codeHash: codeHash(this.config.codeSecret, purpose, email, code),
       expiresAt: new Date(Date.now() + this.config.codeTtlMinutes * 60_000)
     });
@@ -78,20 +87,25 @@ class AuthService {
     return this.config.exposeDevCodes ? result.devCode : undefined;
   }
 
-  async requestRegistration({ email: rawEmail, password: rawPassword }) {
+  async requestRegistration({ email: rawEmail, password: rawPassword, gameName: rawGameName }) {
     const email = this.normalizeEmail(rawEmail);
     const password = this.password(rawPassword);
+    const gameName = this.gameName(rawGameName);
     if (await this.store.findUserByEmail(email)) {
       throw new AppError(409, 'EMAIL_EXISTS', 'Аккаунт с этой почтой уже существует.');
+    }
+    if (await this.store.findUserByGameName(gameName)) {
+      throw new AppError(409, 'USERNAME_EXISTS', 'Этот ник уже занят. Выберите другой.');
     }
     await this.assertResendAllowed(email, 'register');
     const passwordHashValue = await hashPassword(password);
     const devCode = await this.saveAndSendCode({
       email,
       purpose: 'register',
-      passwordHashValue
+      passwordHashValue,
+      gameName
     });
-    return { email, devCode };
+    return { email, gameName, devCode };
   }
 
   async verifyChallenge(email, purpose, code) {
@@ -135,6 +149,9 @@ class AuthService {
       throw new AppError(409, 'EMAIL_EXISTS', 'Аккаунт с этой почтой уже существует.');
     }
     const challenge = await this.verifyChallenge(email, 'register', code);
+    if (!challenge.gameName) {
+      throw new AppError(400, 'CODE_EXPIRED', 'Запросите новый код и выберите ник.');
+    }
     const id = crypto.randomUUID();
     let user;
     try {
@@ -142,11 +159,15 @@ class AuthService {
         id,
         email,
         passwordHash: challenge.passwordHash,
-        gameName: gameNameFromEmail(email, id)
+        gameName: challenge.gameName
       });
     } catch (error) {
       if (error.code === '23505') {
-        throw new AppError(409, 'EMAIL_EXISTS', 'Аккаунт уже был создан. Выполните вход.');
+        if (await this.store.findUserByEmail(email)) {
+          throw new AppError(409, 'EMAIL_EXISTS', 'Аккаунт уже был создан. Выполните вход.');
+        }
+        await this.store.deleteChallenge(email, 'register');
+        throw new AppError(409, 'USERNAME_EXISTS', 'Этот ник уже занят. Выберите другой.');
       }
       throw error;
     }

@@ -54,14 +54,20 @@ after(async () => {
 });
 
 test('registration, session and one-time launch ticket', async () => {
+  const invalidName = await request('/v1/auth/register/request', {
+    body: { email: 'invalid@example.com', password: 'StrongPassword42', gameName: 'ник с пробелом' }
+  });
+  assert.equal(invalidName.status, 400);
+  assert.equal(invalidName.data.code, 'INVALID_USERNAME');
+
   const weak = await request('/v1/auth/register/request', {
-    body: { email: 'hero@example.com', password: 'short' }
+    body: { email: 'hero@example.com', password: 'short', gameName: 'Hero' }
   });
   assert.equal(weak.status, 400);
   assert.equal(weak.data.code, 'WEAK_PASSWORD');
 
   const requested = await request('/v1/auth/register/request', {
-    body: { email: 'Hero@Example.com', password: 'StrongPassword42' }
+    body: { email: 'Hero@Example.com', password: 'StrongPassword42', gameName: 'GoldenHero' }
   });
   assert.equal(requested.status, 200);
   assert.match(requested.data.devCode, /^\d{6}$/);
@@ -71,8 +77,14 @@ test('registration, session and one-time launch ticket', async () => {
   });
   assert.equal(verified.status, 201);
   assert.equal(verified.data.user.email, 'hero@example.com');
-  assert.match(verified.data.user.gameName, /^hero_[a-f0-9]{6}$/);
+  assert.equal(verified.data.user.gameName, 'GoldenHero');
   assert.ok(verified.data.token.length >= 40);
+
+  const duplicateName = await request('/v1/auth/register/request', {
+    body: { email: 'other@example.com', password: 'StrongPassword42', gameName: 'goldenhero' }
+  });
+  assert.equal(duplicateName.status, 409);
+  assert.equal(duplicateName.data.code, 'USERNAME_EXISTS');
 
   const session = await request('/v1/auth/session', { method: 'GET', token: verified.data.token });
   assert.equal(session.status, 200);

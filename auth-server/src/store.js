@@ -20,11 +20,13 @@ class PostgresStore {
   }
 
   async init() {
-    const migration = fs.readFileSync(
-      path.join(__dirname, '..', 'migrations', '001_initial.sql'),
-      'utf8'
-    );
-    await this.pool.query(migration);
+    const directory = path.join(__dirname, '..', 'migrations');
+    const migrations = fs.readdirSync(directory)
+      .filter((file) => file.endsWith('.sql'))
+      .sort();
+    for (const file of migrations) {
+      await this.pool.query(fs.readFileSync(path.join(directory, file), 'utf8'));
+    }
   }
 
   async close() {
@@ -38,6 +40,14 @@ class PostgresStore {
 
   async findUserByEmail(email) {
     const result = await this.pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    return userFromRow(result.rows[0]);
+  }
+
+  async findUserByGameName(gameName) {
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE LOWER(game_name) = LOWER($1)',
+      [gameName]
+    );
     return userFromRow(result.rows[0]);
   }
 
@@ -66,11 +76,12 @@ class PostgresStore {
   async saveChallenge(challenge) {
     await this.pool.query(
       `INSERT INTO email_challenges
-         (email, purpose, code_hash, password_hash, attempts, expires_at, created_at)
-       VALUES ($1, $2, $3, $4, 0, $5, NOW())
+         (email, purpose, code_hash, password_hash, game_name, attempts, expires_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, 0, $6, NOW())
        ON CONFLICT (email, purpose) DO UPDATE SET
          code_hash = EXCLUDED.code_hash,
          password_hash = EXCLUDED.password_hash,
+         game_name = EXCLUDED.game_name,
          attempts = 0,
          expires_at = EXCLUDED.expires_at,
          created_at = NOW()`,
@@ -79,6 +90,7 @@ class PostgresStore {
         challenge.purpose,
         challenge.codeHash,
         challenge.passwordHash || null,
+        challenge.gameName || null,
         challenge.expiresAt
       ]
     );
@@ -96,6 +108,7 @@ class PostgresStore {
       purpose: row.purpose,
       codeHash: row.code_hash,
       passwordHash: row.password_hash,
+      gameName: row.game_name,
       attempts: row.attempts,
       expiresAt: row.expires_at,
       createdAt: row.created_at
@@ -221,6 +234,11 @@ class MemoryStore {
     return [...this.users.values()].find((user) => user.email === email) || null;
   }
 
+  async findUserByGameName(gameName) {
+    const normalized = String(gameName).toLowerCase();
+    return [...this.users.values()].find((user) => user.gameName.toLowerCase() === normalized) || null;
+  }
+
   async findUserById(id) {
     return this.users.get(id) || null;
   }
@@ -231,7 +249,7 @@ class MemoryStore {
       error.code = '23505';
       throw error;
     }
-    if ([...this.users.values()].some((item) => item.gameName === user.gameName)) {
+    if ([...this.users.values()].some((item) => item.gameName.toLowerCase() === user.gameName.toLowerCase())) {
       const error = new Error('duplicate game name');
       error.code = '23505';
       throw error;

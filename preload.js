@@ -3,7 +3,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('launcher', {
   play: (settings) => ipcRenderer.invoke('play', settings),
   getAuthState: () => ipcRenderer.invoke('auth:get-state'),
-  registerRequest: (email, password) => ipcRenderer.invoke('auth:register-request', { email, password }),
+  registerRequest: (email, password, gameName) => ipcRenderer.invoke(
+    'auth:register-request',
+    { email, password, gameName }
+  ),
   registerVerify: (email, code) => ipcRenderer.invoke('auth:register-verify', { email, code }),
   login: (email, password) => ipcRenderer.invoke('auth:login', { email, password }),
   passwordRequest: (email) => ipcRenderer.invoke('auth:password-request', { email }),

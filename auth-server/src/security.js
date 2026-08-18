@@ -75,21 +75,19 @@ function safeEqualText(left, right) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-function gameNameFromEmail(email, id) {
-  const local = email.split('@')[0]
-    .normalize('NFKD')
-    .replace(/[^A-Za-z0-9_]/g, '')
-    .slice(0, 9);
-  const base = local.length >= 3 ? local : 'Player';
-  const suffix = id.replace(/-/g, '').slice(0, 6);
-  return `${base}_${suffix}`.slice(0, 16);
+function normalizeGameName(value) {
+  const gameName = String(value || '').trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(gameName)) {
+    throw new Error('Ник должен содержать от 3 до 16 латинских букв, цифр или символов _.');
+  }
+  return gameName;
 }
 
 module.exports = {
   codeHash,
-  gameNameFromEmail,
   hashPassword,
   normalizeEmail,
+  normalizeGameName,
   randomCode,
   randomToken,
   safeEqualText,

@@ -901,6 +901,19 @@ body[data-state="restarting"] .progress-fill {
   gap: 11px;
 }
 
+.auth-view[data-auth-view="register"] {
+  gap: 7px;
+}
+
+.auth-view[data-auth-view="register"] .auth-field {
+  gap: 4px;
+}
+
+.auth-view[data-auth-view="register"] .auth-input,
+.auth-view[data-auth-view="register"] .auth-primary {
+  height: 42px;
+}
+
 .auth-view[hidden] {
   display: none;
 }

@@ -346,16 +346,21 @@ document.querySelector('[data-auth-view="login"]').addEventListener('submit', as
 
 document.querySelector('[data-auth-view="register"]').addEventListener('submit', async (event) => {
   event.preventDefault();
+  const gameName = document.getElementById('register-username').value.trim();
   const email = document.getElementById('register-email').value.trim();
   const password = document.getElementById('register-password').value;
   const confirmation = document.getElementById('register-confirm').value;
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(gameName)) {
+    showAuthMessage('Ник: 3–16 латинских букв, цифр или символов _.');
+    return;
+  }
   if (password !== confirmation) {
     showAuthMessage('Пароли не совпадают.');
     return;
   }
-  const result = await runAuth(() => window.launcher.registerRequest(email, password));
+  const result = await runAuth(() => window.launcher.registerRequest(email, password, gameName));
   if (!result) return;
-  pendingRegistration = { email, password };
+  pendingRegistration = { email, password, gameName };
   localStorage.setItem(EMAIL_KEY, email);
   document.getElementById('register-code-email').textContent = email;
   clearOtp('register');
@@ -387,7 +392,8 @@ document.getElementById('resend-register').addEventListener('click', async () =>
   if (!pendingRegistration) return;
   const result = await runAuth(() => window.launcher.registerRequest(
     pendingRegistration.email,
-    pendingRegistration.password
+    pendingRegistration.password,
+    pendingRegistration.gameName
   ));
   if (!result) return;
   clearOtp('register');
