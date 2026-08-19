@@ -154,6 +154,20 @@ function sendProgress(value) {
   send('progress', Math.max(0, Math.min(100, Number(value) || 0)));
 }
 
+function writeLauncherLog(message) {
+  try {
+    const debugDir = path.join(dataDir(), 'debug');
+    fs.mkdirSync(debugDir, { recursive: true });
+    fs.appendFileSync(
+      path.join(debugDir, 'launcher.log'),
+      `[${new Date().toISOString()}] ${String(message)}\n`,
+      'utf8'
+    );
+  } catch {
+    // Logging must never prevent the launcher from starting.
+  }
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1100,
@@ -197,6 +211,7 @@ function checkLauncherUpdates() {
 
   autoUpdater.on('update-available', (info) => {
     launcherUpdating = true;
+    writeLauncherLog(`Доступно обновление лаунчера ${info.version}`);
     sendStatus(`Загружаем лаунчер ${info.version}`, 'updating', true);
     sendProgress(0);
   });
@@ -214,6 +229,7 @@ function checkLauncherUpdates() {
 
   autoUpdater.on('update-downloaded', (info) => {
     launcherUpdating = true;
+    writeLauncherLog(`Обновление лаунчера ${info.version} загружено, запускаем установку`);
     sendProgress(100);
     sendStatus(`Устанавливаем версию ${info.version}`, 'restarting', true);
     setTimeout(() => autoUpdater.quitAndInstall(false, true), 1200);
@@ -221,6 +237,7 @@ function checkLauncherUpdates() {
 
   autoUpdater.on('error', (error) => {
     launcherUpdating = false;
+    writeLauncherLog(`Ошибка обновления лаунчера: ${error.message}`);
     sendProgress(100);
     sendStatus('Готов к игре');
     send('launcher-error', `Обновление лаунчера недоступно: ${error.message}`);
@@ -228,6 +245,7 @@ function checkLauncherUpdates() {
 
   autoUpdater.checkForUpdates().catch((error) => {
     launcherUpdating = false;
+    writeLauncherLog(`Проверка обновления лаунчера завершилась ошибкой: ${error.message}`);
     sendProgress(100);
     sendStatus('Готов к игре');
     send('launcher-error', `Обновление лаунчера недоступно: ${error.message}`);
@@ -252,7 +270,10 @@ app.on('window-all-closed', () => {
 });
 
 const io = {
-  log: (message) => sendStatus(String(message), 'working', true),
+  log: (message) => {
+    writeLauncherLog(message);
+    sendStatus(String(message), 'working', true);
+  },
   progress: sendProgress
 };
 
@@ -349,6 +370,7 @@ ipcMain.handle('play', async (_event, requestedSettings = {}) => {
     return { ok: true };
   } catch (error) {
     const message = error && error.message ? error.message : String(error);
+    writeLauncherLog(`Запуск остановлен: ${message}`);
     sendProgress(0);
     sendStatus('Не удалось запустить игру', 'error');
     send('launcher-error', message);
